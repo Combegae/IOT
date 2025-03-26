@@ -37,7 +37,11 @@
 #define UART_DR 0x00 // ???
 #define UART_FR 0x18 // ???
 
+
 #define RECEIVE_FULL (1 << 4) 
-#define SEND_EMPTY (1 << 1)
+#define SEND_EMPTY (1 << 5)
+
+#define UART_IMSC 0x038
+#define UART_IMSC_RXIM (1<< 4)
 
 #endif /* UART_MMIO_H_ */
