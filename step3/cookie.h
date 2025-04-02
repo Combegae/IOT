@@ -3,6 +3,8 @@
 
 #define MAX_CHARS 128
 
+#include <stdint.h>
+
 typedef uint8_t bool_t;
 
 typedef struct cookie {

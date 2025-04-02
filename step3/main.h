@@ -29,9 +29,8 @@ void kprintf(const char *fmt, ...);
 void read_listener(void *addr);
 void write_listener(void *addr);
 void write_amap(cookie_t *cookie);
+
 void app_start();
-
-
 
 __inline__ __attribute__((always_inline)) uint8_t mmio_read8(void *bar,
                                                              uint8_t offset) {

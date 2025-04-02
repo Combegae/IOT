@@ -1,4 +1,6 @@
 #define MAX_CHARS 512
+#include "ring.h"
+
 
 
 volatile uint32_t tail = 0;
@@ -16,7 +18,7 @@ bool_t ring_full() {
 
 void ring_put(uint8_t bits) {
     uint32_t next = (head + 1) % MAX_CHARS;
-    buffer[head] = code;
+    buffer[head] = bits;
     head = next;
 }
 uint8_t ring_get() {

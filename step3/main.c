@@ -16,6 +16,7 @@
 #include "isr.h"
 #include "uart.h"
 #include "ring.h"
+#include "uart-mmio.h"
 
 extern uint32_t irq_stack_top;
 extern uint32_t stack_top;
@@ -56,53 +57,51 @@ void check_stacks() {
 //     }
 // }
 
+
+
+
+
 void _start() {
     check_stacks();
-    app_start();
-
+    cookie_t cookie;
+    app_start(&cookie);
     for (;;) {
         core_disable_irqs();
-        process_uart(UART0);
+        write_amap(&cookie);
         core_halt();
     }
 }
 
-void uart_init(uint8_t no, void (*read_listener)(void *cookie), void (*write_listener)(void *cookie), void *cookie);
+void app_start(cookie_t *cookie) {
+    uarts_init(); // initialise les base addresses des uarts.
+    uart_init_fct(UART0, read_listener, write_listener, &cookie);
+    uart_enable(UART0);
+    vic_setup_irqs();
 
-bool_t uart_read(uint8_t no, uint8_t* bits);
+    cookie->uartno = UART0;
+    vic_enable_irq(UART0_IRQ, (void*)(uart_rx_handler), &cookie);
+    uart_send_string(UART0, "\nSystème en cours d'execution\n");
 
-bool_t uart_write(uint8_t no, uint8_t* bits);
-
-void uart_rx_handler(void* cookie) {
-    uint8_t code = uart_receive(UART0);
-    while (code) {
-        if (ring_full()){
-            panic();
-        }
-        ring_put(code);
-        code = uart_receive(UART0);
-    }
-    uart_interrupt_ack();
 }
 
-void app_start() {
-    uart_init(UART0, read_listener, write_listener, &cookie);
-}
+
 
 
 void read_listener(void *addr) {
     cookie_t *cookie = addr;
-    uint8_t code;
-    while (!cookie->processing && uart_receive(cookie->uartno,&code)) {
-        cookie->line[cookie->head++]=(char)code;
-        cookie->processing = (code == '\n');
+    uint8_t carac;
+    while (!cookie->processing && uart_receive(cookie->uartno,&carac)) { // tant qu'on ne  traite pas une ligne et qu'on continue de recevoir des caractères de l'utilisateur.
+        cookie->line[cookie->head++]=(char)carac;
+        cookie->processing = (carac == '\n'); // passe a Vrai si on a le char de fin de ligne de commande.
         write_amap(cookie);
     }
     bool_t dropped=0;
-    while (cookie->processing && uart_receive(cookie->uartno, &code))
+    while (cookie->processing && uart_receive(cookie->uartno, &carac))
         dropped=1;
-    if (dropped)
-        //beep(); // signal dropped bytes...
+    if (dropped){
+        ;
+         //beep(); // signal dropped bytes...
+    }
 }
 
 void write_listener(void *addr) {
@@ -110,10 +109,10 @@ void write_listener(void *addr) {
     write_amap(cookie);
 }
 
-void write_amap(cookie_t *cookie) {
+void write_amap(cookie_t *cookie) { // Code pour exe le shell.
     while (cookie->tail < cookie->head) {
         uint8_t code = cookie->line[cookie->tail];
-        if (!uart_write(cookie->uartno, &code))
+        if (!uart_write(cookie->uartno, &code)) //Pour que l'utilisateur voit sa commande.
             return;
         cookie->tail++;
         if (code == '\n') {

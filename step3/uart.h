@@ -37,7 +37,7 @@ void receive_handler(uint8_t id, void* cookie);
  * there is at least one character available in the
  * UART RX FIFO queue.
  */
-bool_t uart_receive(uint8_t uartno, char *pt);
+bool_t uart_receive(uint8_t uartno, uint8_t *pt);
 
 /**
  * Write a one-byte character through the given uart,
@@ -46,19 +46,22 @@ bool_t uart_receive(uint8_t uartno, char *pt);
  * until there is room in the UART TX FIFO queue to send
  * the character.
  */
-void uart_send(uint8_t uartno, char s);
+void uart_send(uint8_t uartno, uint8_t s);
 
 /**
  * This is a wrapper function, provided for simplicity,
  * it sends the given C string through the given uart,
  * using the function uart_send.
  */
-void uart_send_string(uint8_t uartno, const char *s);
+void uart_send_string(uint8_t uartno, const uint8_t *s);
 
 /*
  * Global initialization for all the UARTs
  */
 void uarts_init();
+
+
+void uart_rx_handler(void *cookie);
 
 /*
  * Enables the UART, identified by the given numéro.
@@ -74,7 +77,7 @@ void uart_enable(uint32_t uartno);
 void uart_disable(uint32_t uartno);
 
 
-void uart_init(uint8_t no, void (*read_listener)(void *cookie), void (*write_listener)(void *cookie), void *cookie);
+void uart_init_fct(uint8_t no, void (*read_listener)(void *cookie), void (*write_listener)(void *cookie), void *cookie);
 
 bool_t uart_read(uint8_t no, uint8_t* bits);
 

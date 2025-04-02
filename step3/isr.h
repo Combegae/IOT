@@ -85,7 +85,7 @@ void vic_setup_irqs();
  * VIC enables the given interrupt,
  * like UART0_IRQ
  */
-void vic_enable_irq(uint32_t irq, void (*callback)(uint8_t, void *),
+void vic_enable_irq(uint32_t irq, void (*callback)(uint32_t, void *),
                     void *cookie);
 
 /*

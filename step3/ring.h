@@ -1,9 +1,9 @@
 #ifndef RING_H_
 #define RING_H_
+#include <stdint.h>
 
 typedef uint8_t bool_t;
 
-#include <stdint.h>
 
 bool_t ring_empty();
 

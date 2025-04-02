@@ -51,8 +51,8 @@ void isr() {
         if (irqs & (1 << i))
             handler->callback(i, handler->cookie);
     }
+    //vic_ack_irqs(irqs);
     core_enable_irqs();
-    // vic_ack_irqs(irqs);
 }
 
 void core_enable_irqs() { _irqs_enable(); }
