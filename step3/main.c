@@ -66,7 +66,7 @@ void _start() {
     cookie_t cookie;
     app_start(&cookie);
     for (;;) {
-        core_disable_irqs();
+        //core_disable_irqs();
         write_amap(&cookie);
         core_halt();
     }
@@ -74,12 +74,11 @@ void _start() {
 
 void app_start(cookie_t *cookie) {
     uarts_init(); // initialise les base addresses des uarts.
-    uart_init_fct(UART0, read_listener, write_listener, &cookie);
-    uart_enable(UART0);
-    vic_setup_irqs();
-
     cookie->uartno = UART0;
-    vic_enable_irq(UART0_IRQ, (void*)(uart_rx_handler), &cookie);
+    cookie->tail=0;
+    cookie->head=0;
+    vic_setup_irqs();
+    uart_init_fct(UART0, read_listener, cookie);
     uart_send_string(UART0, "\nSystème en cours d'execution\n");
 
 }
@@ -89,19 +88,21 @@ void app_start(cookie_t *cookie) {
 
 void read_listener(void *addr) {
     cookie_t *cookie = addr;
-    uint8_t carac;
-    while (!cookie->processing && uart_receive(cookie->uartno,&carac)) { // tant qu'on ne  traite pas une ligne et qu'on continue de recevoir des caractères de l'utilisateur.
+    uint8_t carac; // Rajouter le ring get a la place de son uart_receive
+    while (!cookie->processing && !ring_empty()) { // tant qu'on ne  traite pas une ligne et qu'on continue de recevoir des caractères de l'utilisateur.
+        carac = ring_get();
         cookie->line[cookie->head++]=(char)carac;
-        cookie->processing = (carac == '\n'); // passe a Vrai si on a le char de fin de ligne de commande.
-        write_amap(cookie);
+        cookie->processing = (carac == '\r'); // passe a Vrai si on a le char de fin de ligne de commande.
+        //write_amap(cookie);
     }
     bool_t dropped=0;
-    while (cookie->processing && uart_receive(cookie->uartno, &carac))
+    while (cookie->processing && ring_get())
         dropped=1;
     if (dropped){
         ;
          //beep(); // signal dropped bytes...
     }
+
 }
 
 void write_listener(void *addr) {
@@ -110,18 +111,21 @@ void write_listener(void *addr) {
 }
 
 void write_amap(cookie_t *cookie) { // Code pour exe le shell.
+    //uart_send_string(UART0, "test");
     while (cookie->tail < cookie->head) {
         uint8_t code = cookie->line[cookie->tail];
-        if (!uart_write(cookie->uartno, &code)) //Pour que l'utilisateur voit sa commande.
-            return;
+        uart_send(cookie->uartno, code);
         cookie->tail++;
-        if (code == '\n') {
+        if (code == '\r') {
+            uart_send(cookie->uartno, '\n');
+            uart_send_string(UART0, "Exe commande");
             //shell(cookie->line,cookie->head);
             cookie->tail= cookie->head = 0;
             cookie->processing = 0;
         }
     }
 }
+
 
 
 

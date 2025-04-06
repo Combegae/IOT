@@ -44,4 +44,7 @@
 #define UART_IMSC 0x038
 #define UART_IMSC_RXIM (1<< 4)
 
+#define UART_ICR 0x044
+#define UART_ICR_RXIC (1 << 4)
+
 #endif /* UART_MMIO_H_ */

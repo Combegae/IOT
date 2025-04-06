@@ -14,6 +14,7 @@ typedef struct cookie {
     uint32_t head;
     uint32_t tail;
     bool_t processing;
+    void (*rl)(void *);
 } cookie_t;
 
 #endif /* define cookie_h_*/

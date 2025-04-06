@@ -37,7 +37,7 @@ void receive_handler(uint8_t id, void* cookie);
  * there is at least one character available in the
  * UART RX FIFO queue.
  */
-bool_t uart_receive(uint8_t uartno, uint8_t *pt);
+void uart_receive(uint8_t uartno, uint8_t *pt);
 
 /**
  * Write a one-byte character through the given uart,
@@ -61,7 +61,7 @@ void uart_send_string(uint8_t uartno, const uint8_t *s);
 void uarts_init();
 
 
-void uart_rx_handler(void *cookie);
+void uart_rx_handler(uint32_t irq, void *cookie);
 
 /*
  * Enables the UART, identified by the given numéro.
@@ -77,7 +77,7 @@ void uart_enable(uint32_t uartno);
 void uart_disable(uint32_t uartno);
 
 
-void uart_init_fct(uint8_t no, void (*read_listener)(void *cookie), void (*write_listener)(void *cookie), void *cookie);
+void uart_init_fct(uint8_t no, void (*read_listener)(void *cookie), void *cookie);
 
 bool_t uart_read(uint8_t no, uint8_t* bits);
 

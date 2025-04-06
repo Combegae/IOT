@@ -85,7 +85,9 @@ uint32_t vic_load_irqs(void) {
 */
 void vic_enable_irq(const uint32_t irq, void (*callback)(uint32_t, void *),
                     void *cookie) {
-    const handler_t handler = {callback, cookie};
+    handler_t handler;
+    handler.callback = callback;
+    handler.cookie = cookie;
     handlers[irq] = handler;
     mmio_write32((void *) VIC_BASE_ADDR, VICINTENABLE, 1 << irq);
 }

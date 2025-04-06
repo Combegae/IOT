@@ -16,6 +16,7 @@
 #include "uart.h"
 #include "main.h"
 #include "ring.h"
+#include "isr.h"
 #include "uart-mmio.h"
 #include <stdint.h>
 
@@ -52,9 +53,15 @@ void uart_disable(const uint32_t uartno) {
   mmio_write32(uart->bar, UART_IMSC, 0);
 }
 
-void uart_init_fct(uint8_t no, void (*read_listener)(void *cookie), void (*write_listener)(void *cookie), void *cookie){
-
-}
+void uart_init_fct(uint8_t no, void (*read_listener)(void *cookie), void *cookie){
+  cookie_t *cookie2 = cookie;
+  cookie2->rl = read_listener;
+  if(no == UART0){
+    uart_enable(UART0);
+    vic_enable_irq(UART0_IRQ, (void*)(uart_rx_handler), cookie2);
+  }
+  }
+  
 
 bool_t uart_read(uint8_t no, uint8_t* bits){
   return 0;
@@ -64,18 +71,16 @@ bool_t uart_write(uint8_t no, uint8_t* bits){
   return 1;
 }
 
-void uart_rx_handler(void* cookie) {
-    uint8_t *carac;
+void uart_rx_handler(uint32_t irq, void* cookie) {
+    uint8_t carac;
     cookie_t *cookie_2 = cookie;
     const struct uart *uart = &uarts[cookie_2->uartno];
-    uart_receive(UART0, carac);
     while (!(mmio_read8(uart->bar, UART_FR) & RECEIVE_FULL)) { // tant que y'a des char a lire.
-        if (ring_full()){
-            panic();
-        }
-        ring_put(*carac);
-        uart_receive(UART0, carac);
+        uart_receive(UART0, &carac);
+        ring_put(carac);
     }
+    cookie_2->rl(cookie); // Appel read_listener
+
     //uart_interrupt_ack();
 }
 
@@ -96,11 +101,12 @@ void receive_handler(uint8_t id, void* cookie_void) {
   uart_send(cookie->uartno, *cookie->c); // On renvoie le char recu
 }
 
-bool_t uart_receive(const uint8_t uartno, uint8_t *pt) {
+void uart_receive(const uint8_t uartno, uint8_t *pt) {
   const struct uart *uart = &uarts[uartno];
   while (mmio_read8(uart->bar, UART_FR) & RECEIVE_FULL)
     ;
   *pt = mmio_read8(uart->bar, UART_DR);
+  mmio_write16(uart->bar, UART_ICR, UART_ICR); // clear the interruption at the device level
 }
 
 /**

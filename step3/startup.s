@@ -76,4 +76,5 @@ _reset_handler:
     // in case the function "_start" returns...
     // loop for ever.
 halt:
+    bl _irqs_enable
     b .
